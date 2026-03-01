@@ -30,10 +30,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log('[AuthContext] Initializing Firebase...');
+    import('../utils/DebugLogger').then(({ logger }) => {
+      logger.log('Firebase Init Triggered');
+    });
+
     initFirebase();
     console.log('[AuthContext] Setting up auth listener...');
+
     const unsubscribe = onAuthStateChanged((u) => {
       console.log('[AuthContext] Auth state changed:', u ? u.uid : 'null');
+      import('../utils/DebugLogger').then(({ logger }) => {
+        logger.log('Auth State Change', { uid: u?.uid || 'logout' });
+      });
       setUser(u);
       setLoading(false);
     });

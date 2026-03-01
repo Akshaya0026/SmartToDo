@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../context/ThemeContext';
 
@@ -99,5 +99,22 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontSize: 18,
     fontWeight: '700',
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logContainer: {
+    padding: 10,
+    maxHeight: 300,
+  },
+  logText: {
+    fontSize: 10,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginBottom: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E7EB33',
+    paddingBottom: 2,
   },
 });

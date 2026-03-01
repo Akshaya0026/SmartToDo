@@ -38,7 +38,7 @@ function formatCountdown(deadline: number): string {
   return `${mins}m left`;
 }
 
-export function TaskCard({ task, onComplete, onDelete }: TaskCardProps) {
+export const TaskCard = React.memo(({ task, onComplete, onDelete }: TaskCardProps) => {
   const { isDark } = useTheme();
   const translateX = useSharedValue(0);
 
@@ -124,7 +124,7 @@ export function TaskCard({ task, onComplete, onDelete }: TaskCardProps) {
       </View>
     </GestureDetector>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {
