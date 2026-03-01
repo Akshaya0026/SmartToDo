@@ -12,9 +12,16 @@ const THEMES: { key: ThemeMode; label: string }[] = [
 
 export function SettingsScreen({ navigation }: { navigation: { goBack: () => void } }) {
   const { isDark, themeMode, setThemeMode } = useTheme();
+  const [logs, setLogs] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    setLogs(logger.getLogs());
+  }, []);
+
   const bg = isDark ? '#111827' : '#F9FAFB';
   const text = isDark ? '#F9FAFB' : '#111827';
   const cardBg = isDark ? '#1F2937' : '#FFFFFF';
+  const subtext = isDark ? '#9CA3AF' : '#6B7280';
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>
@@ -25,30 +32,52 @@ export function SettingsScreen({ navigation }: { navigation: { goBack: () => voi
         <Text style={[styles.title, { color: text }]}>Settings</Text>
       </View>
 
-      <View style={[styles.card, { backgroundColor: cardBg }]}>
-        <Text style={[styles.sectionTitle, { color: text }]}>Theme</Text>
-        {THEMES.map((t) => (
-          <TouchableOpacity
-            key={t.key}
-            style={[
-              styles.option,
-              themeMode === t.key && styles.optionActive,
-            ]}
-            onPress={() => setThemeMode(t.key)}
-          >
-            <Text
+      <ScrollView>
+        <View style={[styles.card, { backgroundColor: cardBg }]}>
+          <Text style={[styles.sectionTitle, { color: text }]}>Theme</Text>
+          {THEMES.map((t) => (
+            <TouchableOpacity
+              key={t.key}
               style={[
-                styles.optionText,
-                { color: text },
-                themeMode === t.key && styles.optionTextActive,
+                styles.option,
+                themeMode === t.key && styles.optionActive,
               ]}
+              onPress={() => setThemeMode(t.key)}
             >
-              {t.label}
-            </Text>
-            {themeMode === t.key && <Text style={styles.check}>✓</Text>}
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text
+                style={[
+                  styles.optionText,
+                  { color: text },
+                  themeMode === t.key && styles.optionTextActive,
+                ]}
+              >
+                {t.label}
+              </Text>
+              {themeMode === t.key && <Text style={styles.check}>✓</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={[styles.card, { backgroundColor: cardBg }]}>
+          <View style={styles.logHeader}>
+            <Text style={[styles.sectionTitle, { color: text }]}>Diagnostic Logs</Text>
+            <TouchableOpacity onPress={() => { logger.clearLogs(); setLogs([]); }}>
+              <Text style={{ color: '#EF4444', padding: 16 }}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.logContainer}>
+            {logs.length === 0 ? (
+              <Text style={{ color: subtext, padding: 16 }}>No logs yet.</Text>
+            ) : (
+              logs.map((log, i) => (
+                <Text key={i} style={[styles.logText, { color: subtext }]}>
+                  {log}
+                </Text>
+              ))
+            )}
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }

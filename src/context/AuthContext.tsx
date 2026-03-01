@@ -13,6 +13,7 @@ import {
   logoutUser,
 } from '../services/authService';
 import { initFirebase } from '../services/firebase';
+import { logger } from '../utils/DebugLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -29,19 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('[AuthContext] Initializing Firebase...');
-    import('../utils/DebugLogger').then(({ logger }) => {
-      logger.log('Firebase Init Triggered');
-    });
-
+    logger.log('AuthContext Mount');
     initFirebase();
-    console.log('[AuthContext] Setting up auth listener...');
 
     const unsubscribe = onAuthStateChanged((u) => {
-      console.log('[AuthContext] Auth state changed:', u ? u.uid : 'null');
-      import('../utils/DebugLogger').then(({ logger }) => {
-        logger.log('Auth State Change', { uid: u?.uid || 'logout' });
-      });
+      logger.log('Auth State Change', { uid: u?.uid || 'logout' });
       setUser(u);
       setLoading(false);
     });
