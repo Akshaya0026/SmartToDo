@@ -8,6 +8,7 @@ import {
   Platform,
   Alert,
   Modal,
+  Keyboard,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useTasks } from '../context/TaskContext';
@@ -122,7 +123,10 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
   const [loading, setLoading] = useState(false);
 
   const handleSave = () => {
-    console.log('[AddTask] INSTANT_SAVE_TRIGGERED', { title: title.length });
+    console.log('[AddTask] ABSOLUTE_SAVE_TRIGGERED');
+
+    // Safety: Hide keyboard immediately to prevent thread locks
+    Keyboard.dismiss();
 
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a task title');
@@ -135,7 +139,7 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
       return;
     }
 
-    // Fire and forget (Optimistic)
+    // 1. Invoke "Never-Fail" Add
     addTask({
       title: title.trim(),
       description: description.trim(),
@@ -143,8 +147,15 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
       priority,
     });
 
-    console.log('[AddTask] OPTIMISTIC_UI_CLOSE');
-    navigation.goBack();
+    console.log('[AddTask] CLOSING_SCREEN_DIRECTLY');
+
+    // 2. Hard Navigation Fallback
+    try {
+      navigation.goBack();
+    } catch (e) {
+      console.error('[AddTask] goBack failed, using navigate home');
+      (navigation as any).navigate('Home');
+    }
   };
 
   const bg = isDark ? '#111827' : '#F9FAFB';

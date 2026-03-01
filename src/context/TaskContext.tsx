@@ -92,36 +92,39 @@ export function TaskProvider({
   const addTask = useCallback(
     async (input: TaskInput) => {
       console.log('[TaskContext] ADDTASK_START (Optimistic)', { title: input.title });
-      if (!userId) return;
 
-      // 1. Create Optimistic Task
-      const tempId = `temp_${Date.now()}`;
+      // Safety Guard: Use guest_user if userId is missing to prevent button being stuck
+      const effectiveUserId = userId || 'guest_user';
+      if (!userId) {
+        console.warn('[TaskContext] userId missing, falling back to guest_user');
+      }
+
+      // 1. Create Heartbeat ID (Guaranteed Unique)
+      const heartbeatId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       const newTask: Task = {
-        id: tempId,
+        id: heartbeatId,
         title: input.title,
         description: input.description,
         createdAt: Date.now(),
         deadline: input.deadline,
         priority: input.priority,
         completed: false,
-        userId: userId,
+        userId: effectiveUserId,
       };
 
       // 2. Update UI Instantly
       setTasks((prev) => sortTasks([...prev, newTask]));
 
-      // 3. Background Sync (Don't await it for the UI to return)
-      addTaskService(userId, input)
+      // 3. Background Sync
+      addTaskService(effectiveUserId, input)
         .then((realTask) => {
-          console.log('[TaskContext] Sync Success, replacing temp ID');
+          console.log('[TaskContext] Sync Success, replacing Heartbeat ID');
           setTasks((prev) =>
-            prev.map((t) => (t.id === tempId ? realTask : t))
+            prev.map((t) => (t.id === heartbeatId ? realTask : t))
           );
         })
         .catch((e) => {
-          console.error('[TaskContext] Background Sync Failed:', e);
-          // If it fails, the task stays in the list as an "offline" task 
-          // (taskService already saved it to AsyncStorage in its own catch block)
+          console.error('[TaskContext] Background Sync Failed (Still saved locally):', e);
         });
     },
     [userId]
