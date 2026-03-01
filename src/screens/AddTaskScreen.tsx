@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,106 @@ import {
   ScrollView,
   Platform,
   Alert,
+  Modal,
 } from 'react-native';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTheme } from '../context/ThemeContext';
 import { useTasks } from '../context/TaskContext';
 import { InputField } from '../components/InputField';
 import { Priority } from '../models/Task';
 import { formatDate, formatTime } from '../utils/dateUtils';
+
+interface CustomPickerProps {
+  visible: boolean;
+  onClose: () => void;
+  value: Date;
+  mode: 'date' | 'time';
+  onSelect: (date: Date) => void;
+}
+
+function CustomPicker({ visible, onClose, value, mode, onSelect }: CustomPickerProps) {
+  const { isDark } = useTheme();
+  const [tempDate, setTempDate] = useState(new Date(value));
+
+  const bg = isDark ? '#1F2937' : '#FFFFFF';
+  const text = isDark ? '#F9FAFB' : '#111827';
+  const overlay = 'rgba(0,0,0,0.5)';
+
+  const adjustDate = (unit: 'day' | 'month' | 'year' | 'hour' | 'min', amount: number) => {
+    const next = new Date(tempDate);
+    if (unit === 'day') next.setDate(next.getDate() + amount);
+    if (unit === 'month') next.setMonth(next.setMonth(next.getMonth() + amount));
+    if (unit === 'year') next.setFullYear(next.getFullYear() + amount);
+    if (unit === 'hour') next.setHours(next.getHours() + amount);
+    if (unit === 'min') next.setMinutes(next.getMinutes() + amount);
+    setTempDate(next);
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={[styles.modalOverlay, { backgroundColor: overlay }]}>
+        <View style={[styles.modalContent, { backgroundColor: bg }]}>
+          <Text style={[styles.modalTitle, { color: text }]}>
+            Set {mode === 'date' ? 'Date' : 'Time'}
+          </Text>
+
+          {mode === 'date' ? (
+            <View style={styles.pickerRow}>
+              <View style={styles.pickerCol}>
+                <TouchableOpacity onPress={() => adjustDate('day', 1)}><Text style={styles.arrow}>▲</Text></TouchableOpacity>
+                <Text style={[styles.pickerValue, { color: text }]}>{tempDate.getDate()}</Text>
+                <TouchableOpacity onPress={() => adjustDate('day', -1)}><Text style={styles.arrow}>▼</Text></TouchableOpacity>
+                <Text style={styles.pickerLabel}>Day</Text>
+              </View>
+              <View style={styles.pickerCol}>
+                <TouchableOpacity onPress={() => adjustDate('month', 1)}><Text style={styles.arrow}>▲</Text></TouchableOpacity>
+                <Text style={[styles.pickerValue, { color: text }]}>{tempDate.getMonth() + 1}</Text>
+                <TouchableOpacity onPress={() => adjustDate('month', -1)}><Text style={styles.arrow}>▼</Text></TouchableOpacity>
+                <Text style={styles.pickerLabel}>Month</Text>
+              </View>
+              <View style={styles.pickerCol}>
+                <TouchableOpacity onPress={() => adjustDate('year', 1)}><Text style={styles.arrow}>▲</Text></TouchableOpacity>
+                <Text style={[styles.pickerValue, { color: text }]}>{tempDate.getFullYear()}</Text>
+                <TouchableOpacity onPress={() => adjustDate('year', -1)}><Text style={styles.arrow}>▼</Text></TouchableOpacity>
+                <Text style={styles.pickerLabel}>Year</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.pickerRow}>
+              <View style={styles.pickerCol}>
+                <TouchableOpacity onPress={() => adjustDate('hour', 1)}><Text style={styles.arrow}>▲</Text></TouchableOpacity>
+                <Text style={[styles.pickerValue, { color: text }]}>{tempDate.getHours().toString().padStart(2, '0')}</Text>
+                <TouchableOpacity onPress={() => adjustDate('hour', -1)}><Text style={styles.arrow}>▼</Text></TouchableOpacity>
+                <Text style={styles.pickerLabel}>Hour</Text>
+              </View>
+              <Text style={[styles.colon, { color: text }]}>:</Text>
+              <View style={styles.pickerCol}>
+                <TouchableOpacity onPress={() => adjustDate('min', 5)}><Text style={styles.arrow}>▲</Text></TouchableOpacity>
+                <Text style={[styles.pickerValue, { color: text }]}>{tempDate.getMinutes().toString().padStart(2, '0')}</Text>
+                <TouchableOpacity onPress={() => adjustDate('min', -5)}><Text style={styles.arrow}>▼</Text></TouchableOpacity>
+                <Text style={styles.pickerLabel}>Min</Text>
+              </View>
+            </View>
+          )}
+
+          <View style={styles.modalButtons}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.confirmBtn}
+              onPress={() => {
+                onSelect(tempDate);
+                onClose();
+              }}
+            >
+              <Text style={styles.confirmText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void } }) {
   const { isDark } = useTheme();
@@ -45,32 +138,6 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
       setLoading(false);
     }
   };
-
-  const onDateChange = React.useCallback(
-    (event: DateTimePickerEvent, selectedDate?: Date) => {
-      // Always dismiss picker immediately for stability
-      setShowPicker(null);
-
-      if (event.type === 'dismissed' || !selectedDate) {
-        return;
-      }
-
-      setDeadline((prevDeadline) => {
-        const newDate = new Date(prevDeadline);
-        if (showPicker === 'date') {
-          newDate.setFullYear(
-            selectedDate.getFullYear(),
-            selectedDate.getMonth(),
-            selectedDate.getDate()
-          );
-        } else if (showPicker === 'time') {
-          newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
-        }
-        return newDate;
-      });
-    },
-    [showPicker]
-  );
 
   const bg = isDark ? '#111827' : '#F9FAFB';
   const text = isDark ? '#F9FAFB' : '#111827';
@@ -142,19 +209,12 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
         </View>
 
         {showPicker && (
-          <DateTimePicker
-            testID="dateTimePicker"
-            value={deadline}
+          <CustomPicker
+            visible={!!showPicker}
             mode={showPicker}
-            is24Hour={false}
-            display={
-              Platform.OS === 'ios'
-                ? 'spinner'
-                : showPicker === 'date'
-                  ? 'calendar'
-                  : 'clock'
-            }
-            onChange={onDateChange}
+            value={deadline}
+            onClose={() => setShowPicker(null)}
+            onSelect={(newDate) => setDeadline(newDate)}
           />
         )}
 
@@ -171,23 +231,10 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-    padding: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  priorityRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
+  container: { flex: 1 },
+  scroll: { flex: 1, padding: 24 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  priorityRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   priorityBtn: {
     flex: 1,
     padding: 12,
@@ -196,45 +243,43 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  priorityBtnActive: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#3B82F620',
-  },
-  priorityText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  priorityTextActive: {
-    color: '#3B82F6',
-  },
-  deadlineRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
+  priorityBtnActive: { borderColor: '#3B82F6', backgroundColor: '#3B82F620' },
+  priorityText: { fontSize: 14, fontWeight: '600' },
+  priorityTextActive: { color: '#3B82F6' },
+  deadlineRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   deadlineBtn: {
     flex: 1,
-    padding: 12,
+    padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB33'
   },
-  dateText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  dateText: { fontSize: 15, fontWeight: '600' },
   button: {
     backgroundColor: '#3B82F6',
-    padding: 16,
+    padding: 18,
     borderRadius: 12,
     alignItems: 'center',
+    marginTop: 10,
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  buttonDisabled: { opacity: 0.7 },
+  buttonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+
+  // Modal Styles
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', borderRadius: 20, padding: 24, alignItems: 'center', elevation: 5 },
+  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 20 },
+  pickerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 30 },
+  pickerCol: { alignItems: 'center' },
+  arrow: { fontSize: 24, color: '#3B82F6', padding: 10 },
+  pickerValue: { fontSize: 28, fontWeight: '700', marginVertical: 5 },
+  pickerLabel: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
+  colon: { fontSize: 28, fontWeight: '700' },
+  modalButtons: { flexDirection: 'row', gap: 12, width: '100%' },
+  cancelBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#F3F4F6' },
+  cancelText: { color: '#4B5563', fontWeight: '600' },
+  confirmBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#3B82F6' },
+  confirmText: { color: '#FFF', fontWeight: '600' },
 });
