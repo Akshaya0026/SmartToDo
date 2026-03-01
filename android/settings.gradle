@@ -1,7 +1,23 @@
 rootProject.name = 'SmartToDoClean'
 
-apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle");
-applyNativeModulesSettingsGradle(settings)
+// --- NODE PATH HACK START ---
+def nodeExecutable = "/Users/akshayaarigela/.nvm/versions/node/v18.20.8/bin/node"
+def nativeModulesGradle = file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+if (nativeModulesGradle.exists()) {
+    def scriptContent = nativeModulesGradle.text
+    if (scriptContent.contains('["node",')) {
+        // Create a temporary patched version of the script
+        def patchedScript = file("build/temp_native_modules.gradle")
+        patchedScript.parentFile.mkdirs()
+        patchedScript.text = scriptContent.replace('["node",', "[\"$nodeExecutable\",")
+        apply from: patchedScript
+    } else {
+        apply from: nativeModulesGradle
+    }
+    applyNativeModulesSettingsGradle(settings)
+}
+// applyNativeModulesSettingsGradle(settings) is called by the applied script
+// --- NODE PATH HACK END ---
 
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
