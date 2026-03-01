@@ -20,7 +20,3 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
-
-react {
-    nodeExecutableAndArgs = ["/Users/akshayaarigela/.nvm/versions/node/v18.20.8/bin/node"]
-}

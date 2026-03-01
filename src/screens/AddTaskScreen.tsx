@@ -13,7 +13,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useTasks } from '../context/TaskContext';
 import { InputField } from '../components/InputField';
 import { Priority } from '../models/Task';
-import { formatDateTime } from '../utils/dateUtils';
+import { formatDate, formatTime } from '../utils/dateUtils';
 
 export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void } }) {
   const { isDark } = useTheme();
@@ -48,7 +48,7 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
 
   const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const currentMode = showPicker;
-    setShowPicker(null); // Hide picker immediately for Android flow
+    setShowPicker(null);
 
     if (event.type === 'dismissed' || !selectedDate) {
       return;
@@ -56,19 +56,11 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
 
     const newDate = new Date(deadline);
     if (currentMode === 'date') {
-      newDate.setFullYear(selectedDate.getFullYear());
-      newDate.setMonth(selectedDate.getMonth());
-      newDate.setDate(selectedDate.getDate());
-      setDeadline(newDate);
-      // Automatically show time picker after date is picked for "cleaner" flow
-      if (Platform.OS === 'android') {
-        setTimeout(() => setShowPicker('time'), 100);
-      }
+      newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
     } else {
-      newDate.setHours(selectedDate.getHours());
-      newDate.setMinutes(selectedDate.getMinutes());
-      setDeadline(newDate);
+      newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
     }
+    setDeadline(newDate);
   };
 
   const bg = isDark ? '#111827' : '#F9FAFB';
@@ -121,14 +113,24 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
         </View>
 
         <Text style={[styles.label, { color: text }]}>Deadline</Text>
-        <TouchableOpacity
-          style={[styles.dateBtn, { backgroundColor: cardBg }]}
-          onPress={() => setShowPicker('date')}
-        >
-          <Text style={[styles.dateText, { color: text }]}>
-            📅 {formatDateTime(deadline)}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.deadlineRow}>
+          <TouchableOpacity
+            style={[styles.deadlineBtn, { backgroundColor: cardBg }]}
+            onPress={() => setShowPicker('date')}
+          >
+            <Text style={[styles.dateText, { color: text }]}>
+              📅 {formatDate(deadline)}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.deadlineBtn, { backgroundColor: cardBg }]}
+            onPress={() => setShowPicker('time')}
+          >
+            <Text style={[styles.dateText, { color: text }]}>
+              ⏰ {formatTime(deadline)}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {showPicker && (
           <DateTimePicker
@@ -189,13 +191,21 @@ const styles = StyleSheet.create({
   priorityTextActive: {
     color: '#3B82F6',
   },
-  dateBtn: {
-    padding: 12,
-    borderRadius: 8,
+  deadlineRow: {
+    flexDirection: 'row',
+    gap: 12,
     marginBottom: 24,
   },
+  deadlineBtn: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dateText: {
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '500',
   },
   button: {
     backgroundColor: '#3B82F6',
