@@ -119,4 +119,19 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth'
 }
 
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
+// --- NODE PATH HACK START ---
+def nodeExecutable = "/Users/akshayaarigela/.nvm/versions/node/v18.20.8/bin/node"
+def nativeModulesGradle = file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+if (nativeModulesGradle.exists()) {
+    def scriptContent = nativeModulesGradle.text
+    if (scriptContent.contains('["node",')) {
+        def patchedScript = file("build/temp_native_modules_app.gradle")
+        patchedScript.parentFile.mkdirs()
+        patchedScript.text = scriptContent.replace('["node",', "[\"$nodeExecutable\",")
+        apply from: patchedScript
+    } else {
+        apply from: nativeModulesGradle
+    }
+    applyNativeModulesAppBuildGradle(project)
+}
+// --- NODE PATH HACK END ---
