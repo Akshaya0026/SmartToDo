@@ -1,6 +1,6 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { Firestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 
 // Replace with your Firebase project configuration
 // Get this from Firebase Console > Project Settings > General > Your apps
@@ -17,11 +17,20 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+
 export function initFirebase() {
-  if (!app) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
+  try {
+    if (!app) {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+      console.log('[Firebase] Safe-Core Initialized with Persistence');
+    }
+  } catch (error) {
+    console.error('[Firebase] Critical Init Error:', error);
   }
   return { app, auth, db };
 }

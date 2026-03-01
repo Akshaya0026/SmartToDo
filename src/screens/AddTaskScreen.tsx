@@ -122,7 +122,7 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
-    console.log('[AddTask] Attempting to save:', { title, deadline: deadline.getTime(), priority });
+    console.log('[AddTask] START_SAVE', { title: title.length, deadline: deadline.getTime(), priority });
 
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a task title');
@@ -131,25 +131,37 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
 
     const deadlineMs = deadline.getTime();
     if (isNaN(deadlineMs)) {
-      Alert.alert('Error', 'Invalid date/time selected. Please reset the deadline.');
+      console.error('[AddTask] INVALID_DATE_STOP');
+      Alert.alert('Error', 'Invalid date selected. Please reset.');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('[AddTask] INVOKING_TASK_SERVICE...');
       await addTask({
         title: title.trim(),
         description: description.trim(),
         deadline: deadlineMs,
         priority,
       });
-      console.log('[AddTask] Success');
-      navigation.goBack();
-    } catch (error) {
-      console.error('[AddTask] Error:', error);
-      Alert.alert('Error', 'Failed to add task. Please check your connection.');
+      console.log('[AddTask] SERVICE_SUCCESS_NAVIGATING...');
+
+      // Delay navigation slightly to allow native thread to breath
+      setTimeout(() => {
+        try {
+          navigation.goBack();
+        } catch (e) {
+          console.error('[AddTask] NAV_FAIL_SILENT:', e);
+        }
+      }, 100);
+
+    } catch (error: any) {
+      console.error('[AddTask] SAVE_EXCEPTION:', error?.message || error);
+      Alert.alert('Error', 'Could not save task. Check net/connection.');
     } finally {
       setLoading(false);
+      console.log('[AddTask] SAVE_FLOW_END');
     }
   };
 

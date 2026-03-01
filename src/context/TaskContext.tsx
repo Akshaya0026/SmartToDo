@@ -17,7 +17,6 @@ import {
   getOfflineTasks,
 } from '../services/taskService';
 import { sortTasks } from '../utils/sortTasks';
-import { scheduleTaskReminder } from '../services/notificationService';
 
 interface TaskContextType {
   tasks: Task[];
@@ -92,10 +91,23 @@ export function TaskProvider({
 
   const addTask = useCallback(
     async (input: TaskInput) => {
-      if (!userId) return;
-      const task = await addTaskService(userId, input);
-      setTasks((prev) => sortTasks([...prev, task]));
-      scheduleTaskReminder(task);
+      console.log('[TaskContext] ADDTASK_START', { title: input.title });
+      if (!userId) {
+        console.error('[TaskContext] ADDTASK_FAIL_NO_USER');
+        return;
+      }
+      try {
+        const task = await addTaskService(userId, input);
+        console.log('[TaskContext] ADDTASK_SERVICE_SUCCESS', { id: task.id });
+        setTasks((prev) => {
+          const newList = sortTasks([...prev, task]);
+          console.log('[TaskContext] ADDTASK_STATE_UPDATED', { total: newList.length });
+          return newList;
+        });
+      } catch (e: any) {
+        console.error('[TaskContext] ADDTASK_SERVICE_EXCEPTION:', e?.message || e);
+        throw e; // Re-throw so UI can handle it
+      }
     },
     [userId]
   );
