@@ -34,11 +34,14 @@ function CustomPicker({ visible, onClose, value, mode, onSelect }: CustomPickerP
   const adjustDate = (unit: 'day' | 'month' | 'year' | 'hour' | 'min', amount: number) => {
     const next = new Date(tempDate);
     if (unit === 'day') next.setDate(next.getDate() + amount);
-    if (unit === 'month') next.setMonth(next.setMonth(next.getMonth() + amount));
+    if (unit === 'month') next.setMonth(next.getMonth() + amount);
     if (unit === 'year') next.setFullYear(next.getFullYear() + amount);
     if (unit === 'hour') next.setHours(next.getHours() + amount);
     if (unit === 'min') next.setMinutes(next.getMinutes() + amount);
-    setTempDate(next);
+
+    if (!isNaN(next.getTime())) {
+      setTempDate(next);
+    }
   };
 
   return (
@@ -119,21 +122,32 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
+    console.log('[AddTask] Attempting to save:', { title, deadline: deadline.getTime(), priority });
+
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a task title');
       return;
     }
+
+    const deadlineMs = deadline.getTime();
+    if (isNaN(deadlineMs)) {
+      Alert.alert('Error', 'Invalid date/time selected. Please reset the deadline.');
+      return;
+    }
+
     setLoading(true);
     try {
       await addTask({
         title: title.trim(),
         description: description.trim(),
-        deadline: deadline.getTime(),
+        deadline: deadlineMs,
         priority,
       });
+      console.log('[AddTask] Success');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Error', 'Failed to add task');
+      console.error('[AddTask] Error:', error);
+      Alert.alert('Error', 'Failed to add task. Please check your connection.');
     } finally {
       setLoading(false);
     }
