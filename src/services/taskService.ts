@@ -38,12 +38,26 @@ function taskFromFirestore(docData: Record<string, unknown>, id: string): Task {
   };
 }
 
+const TIMEOUT_MS = 5000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Operation timed out')), timeoutMs)
+    ),
+  ]);
+}
+
 export async function fetchTasks(userId: string): Promise<Task[]> {
   try {
     const db = getFirebaseDb();
     const tasksRef = collection(db, TASKS_COLLECTION);
     const q = query(tasksRef, where('userId', '==', userId));
-    const snapshot = await getDocs(q);
+
+    // Try with timeout, fall back to offline immediately if slow
+    const snapshot = await withTimeout(getDocs(q), TIMEOUT_MS);
+
     const firestoreTasks = snapshot.docs.map((d) =>
       taskFromFirestore(d.data() as Record<string, unknown>, d.id)
     );
@@ -55,7 +69,7 @@ export async function fetchTasks(userId: string): Promise<Task[]> {
     ];
     return merged;
   } catch (error) {
-    console.warn('Fetch tasks failed, using offline cache:', error);
+    console.warn('Fetch tasks slow or failed, using offline cache:', error);
     return getOfflineTasks(userId);
   }
 }
@@ -79,17 +93,20 @@ export async function addTask(
   };
 
   try {
-    const docRef = await addDoc(tasksRef, {
+    // Fast-Path: Try to add to Firestore with a 5s limit
+    const docRef = await withTimeout(addDoc(tasksRef, {
       ...taskData,
       createdAt: Timestamp.fromMillis(now),
       deadline: Timestamp.fromMillis(input.deadline),
-    });
+    }), TIMEOUT_MS);
+
+    console.log('[TaskService] Firestore Add Success:', docRef.id);
     return {
       id: docRef.id,
       ...taskData,
     };
-  } catch (error) {
-    // Offline: save to local and return
+  } catch (error: any) {
+    console.warn('[TaskService] Firestore slow or failed, emergency offline fallback:', error?.message);
     const offlineTask: Task = {
       id: `offline_${Date.now()}`,
       ...taskData,
