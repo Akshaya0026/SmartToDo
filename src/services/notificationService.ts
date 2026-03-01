@@ -15,10 +15,10 @@ try {
 }
 
 export function initNotifications(): void {
-  if (!PushNotification) return;
   try {
+    if (!PushNotification) return;
     PushNotification.configure({
-      onNotification: () => {},
+      onNotification: () => { },
       permissions: { alert: true, badge: true, sound: true },
       popInitialNotification: true,
       requestPermissions: Platform.OS === 'ios',
@@ -31,18 +31,19 @@ export function initNotifications(): void {
         playSound: true,
         importance: 4,
       },
-      () => {}
+      () => { }
     );
-  } catch {
-    // Ignore notification setup errors
+  } catch (e) {
+    console.warn('[NotificationService] Init failed:', e);
   }
 }
 
 export function scheduleTaskReminder(task: Task): void {
-  if (!PushNotification) return;
-  const reminderTime = task.deadline - 15 * 60 * 1000; // 15 min before
-  if (reminderTime <= Date.now()) return;
   try {
+    if (!PushNotification) return;
+    const reminderTime = task.deadline - 15 * 60 * 1000;
+    if (reminderTime <= Date.now()) return;
+
     PushNotification.localNotificationSchedule({
       channelId: 'task-reminders',
       id: task.id,
@@ -51,16 +52,16 @@ export function scheduleTaskReminder(task: Task): void {
       date: new Date(reminderTime),
       allowWhileIdle: true,
     });
-  } catch {
-    // Ignore
+  } catch (e) {
+    console.warn('[NotificationService] Schedule failed:', e);
   }
 }
 
 export function cancelTaskReminder(taskId: string): void {
-  if (!PushNotification) return;
   try {
+    if (!PushNotification) return;
     PushNotification.cancelLocalNotification(taskId);
-  } catch {
-    // Ignore
+  } catch (e) {
+    console.warn('[NotificationService] Cancel failed:', e);
   }
 }
