@@ -121,8 +121,8 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
   const [showPicker, setShowPicker] = useState<'date' | 'time' | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSave = async () => {
-    console.log('[AddTask] START_SAVE', { title: title.length, deadline: deadline.getTime(), priority });
+  const handleSave = () => {
+    console.log('[AddTask] INSTANT_SAVE_TRIGGERED', { title: title.length });
 
     if (!title.trim()) {
       Alert.alert('Error', 'Please enter a task title');
@@ -131,38 +131,20 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
 
     const deadlineMs = deadline.getTime();
     if (isNaN(deadlineMs)) {
-      console.error('[AddTask] INVALID_DATE_STOP');
-      Alert.alert('Error', 'Invalid date selected. Please reset.');
+      Alert.alert('Error', 'Invalid date selected.');
       return;
     }
 
-    setLoading(true);
-    try {
-      console.log('[AddTask] INVOKING_TASK_SERVICE...');
-      await addTask({
-        title: title.trim(),
-        description: description.trim(),
-        deadline: deadlineMs,
-        priority,
-      });
-      console.log('[AddTask] SERVICE_SUCCESS_NAVIGATING...');
+    // Fire and forget (Optimistic)
+    addTask({
+      title: title.trim(),
+      description: description.trim(),
+      deadline: deadlineMs,
+      priority,
+    });
 
-      // Delay navigation slightly to allow native thread to breath
-      setTimeout(() => {
-        try {
-          navigation.goBack();
-        } catch (e) {
-          console.error('[AddTask] NAV_FAIL_SILENT:', e);
-        }
-      }, 100);
-
-    } catch (error: any) {
-      console.error('[AddTask] SAVE_EXCEPTION:', error?.message || error);
-      Alert.alert('Error', 'Could not save task. Check net/connection.');
-    } finally {
-      setLoading(false);
-      console.log('[AddTask] SAVE_FLOW_END');
-    }
+    console.log('[AddTask] OPTIMISTIC_UI_CLOSE');
+    navigation.goBack();
   };
 
   const bg = isDark ? '#111827' : '#F9FAFB';

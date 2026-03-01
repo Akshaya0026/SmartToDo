@@ -92,13 +92,19 @@ export async function addTask(
     userId,
   };
 
+  // Create local representation
+  const localTask: Task = {
+    id: `offline_${Date.now()}`,
+    ...taskData,
+  };
+
   try {
-    // Fast-Path: Try to add to Firestore with a 5s limit
+    // Try Firestore with strict timeout
     const docRef = await withTimeout(addDoc(tasksRef, {
       ...taskData,
       createdAt: Timestamp.fromMillis(now),
       deadline: Timestamp.fromMillis(input.deadline),
-    }), TIMEOUT_MS);
+    }), 3000);
 
     console.log('[TaskService] Firestore Add Success:', docRef.id);
     return {
@@ -106,13 +112,10 @@ export async function addTask(
       ...taskData,
     };
   } catch (error: any) {
-    console.warn('[TaskService] Firestore slow or failed, emergency offline fallback:', error?.message);
-    const offlineTask: Task = {
-      id: `offline_${Date.now()}`,
-      ...taskData,
-    };
-    await saveOfflineTask(userId, offlineTask);
-    return offlineTask;
+    console.warn('[TaskService] Firestore slow or failed, saving locally:', error?.message);
+    // Mandatory local save on failure
+    await saveOfflineTask(userId, localTask);
+    return localTask;
   }
 }
 

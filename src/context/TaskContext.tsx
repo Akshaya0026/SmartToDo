@@ -91,23 +91,38 @@ export function TaskProvider({
 
   const addTask = useCallback(
     async (input: TaskInput) => {
-      console.log('[TaskContext] ADDTASK_START', { title: input.title });
-      if (!userId) {
-        console.error('[TaskContext] ADDTASK_FAIL_NO_USER');
-        return;
-      }
-      try {
-        const task = await addTaskService(userId, input);
-        console.log('[TaskContext] ADDTASK_SERVICE_SUCCESS', { id: task.id });
-        setTasks((prev) => {
-          const newList = sortTasks([...prev, task]);
-          console.log('[TaskContext] ADDTASK_STATE_UPDATED', { total: newList.length });
-          return newList;
+      console.log('[TaskContext] ADDTASK_START (Optimistic)', { title: input.title });
+      if (!userId) return;
+
+      // 1. Create Optimistic Task
+      const tempId = `temp_${Date.now()}`;
+      const newTask: Task = {
+        id: tempId,
+        title: input.title,
+        description: input.description,
+        createdAt: Date.now(),
+        deadline: input.deadline,
+        priority: input.priority,
+        completed: false,
+        userId: userId,
+      };
+
+      // 2. Update UI Instantly
+      setTasks((prev) => sortTasks([...prev, newTask]));
+
+      // 3. Background Sync (Don't await it for the UI to return)
+      addTaskService(userId, input)
+        .then((realTask) => {
+          console.log('[TaskContext] Sync Success, replacing temp ID');
+          setTasks((prev) =>
+            prev.map((t) => (t.id === tempId ? realTask : t))
+          );
+        })
+        .catch((e) => {
+          console.error('[TaskContext] Background Sync Failed:', e);
+          // If it fails, the task stays in the list as an "offline" task 
+          // (taskService already saved it to AsyncStorage in its own catch block)
         });
-      } catch (e: any) {
-        console.error('[TaskContext] ADDTASK_SERVICE_EXCEPTION:', e?.message || e);
-        throw e; // Re-throw so UI can handle it
-      }
     },
     [userId]
   );
