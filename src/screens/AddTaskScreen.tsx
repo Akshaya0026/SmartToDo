@@ -46,22 +46,31 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
     }
   };
 
-  const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    const currentMode = showPicker;
-    setShowPicker(null);
+  const onDateChange = React.useCallback(
+    (event: DateTimePickerEvent, selectedDate?: Date) => {
+      // Always dismiss picker immediately for stability
+      setShowPicker(null);
 
-    if (event.type === 'dismissed' || !selectedDate) {
-      return;
-    }
+      if (event.type === 'dismissed' || !selectedDate) {
+        return;
+      }
 
-    const newDate = new Date(deadline);
-    if (currentMode === 'date') {
-      newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-    } else {
-      newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes());
-    }
-    setDeadline(newDate);
-  };
+      setDeadline((prevDeadline) => {
+        const newDate = new Date(prevDeadline);
+        if (showPicker === 'date') {
+          newDate.setFullYear(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            selectedDate.getDate()
+          );
+        } else if (showPicker === 'time') {
+          newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
+        }
+        return newDate;
+      });
+    },
+    [showPicker]
+  );
 
   const bg = isDark ? '#111827' : '#F9FAFB';
   const text = isDark ? '#F9FAFB' : '#111827';
@@ -134,10 +143,17 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
 
         {showPicker && (
           <DateTimePicker
+            testID="dateTimePicker"
             value={deadline}
             mode={showPicker}
             is24Hour={false}
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            display={
+              Platform.OS === 'ios'
+                ? 'spinner'
+                : showPicker === 'date'
+                  ? 'calendar'
+                  : 'clock'
+            }
             onChange={onDateChange}
           />
         )}
