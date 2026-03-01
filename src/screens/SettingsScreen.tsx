@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeMode } from '../context/ThemeContext';
+import { logger } from '../utils/DebugLogger';
 
 const THEMES: { key: ThemeMode; label: string }[] = [
   { key: 'light', label: 'Light' },
