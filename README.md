@@ -76,11 +76,6 @@ A premium, feature-rich task management application built with **React Native** 
 
 ---
 
-## 📸 Screenshots
-
-*(Add your screenshots here to showcase the Aurora, Midnight, and Sunset themes!)*
-
----
 
 ## 📄 License
 This project is licensed under the MIT License.
