@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   Keyboard,
+  TextInput,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useTasks } from '../context/TaskContext';
@@ -122,6 +123,30 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
   const [showPicker, setShowPicker] = useState<'date' | 'time' | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // New features
+  const [subtasks, setSubtasks] = useState<{ id: string, title: string, completed: boolean }[]>([]);
+  const [subtaskInput, setSubtaskInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+
+  const handleAddSubtask = () => {
+    if (!subtaskInput.trim()) return;
+    setSubtasks([...subtasks, {
+      id: Math.random().toString(36).substr(2, 9),
+      title: subtaskInput.trim(),
+      completed: false,
+    }]);
+    setSubtaskInput('');
+  };
+
+  const handleAddTag = () => {
+    if (!tagInput.trim()) return;
+    if (!tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+    }
+    setTagInput('');
+  };
+
   const handleSave = () => {
     console.log('[AddTask] ABSOLUTE_SAVE_TRIGGERED');
 
@@ -133,9 +158,16 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
       return;
     }
 
+    const now = Date.now();
     const deadlineMs = deadline.getTime();
+
     if (isNaN(deadlineMs)) {
       Alert.alert('Error', 'Invalid date selected.');
+      return;
+    }
+
+    if (deadlineMs < now) {
+      Alert.alert('Invalid Deadline', 'Please select a future date and time.');
       return;
     }
 
@@ -145,6 +177,8 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
       description: description.trim(),
       deadline: deadlineMs,
       priority,
+      subtasks,
+      tags,
     });
 
     console.log('[AddTask] CLOSING_SCREEN_DIRECTLY');
@@ -237,6 +271,56 @@ export function AddTaskScreen({ navigation }: { navigation: { goBack: () => void
           />
         )}
 
+        <View style={styles.section}>
+          <Text style={[styles.label, { color: text }]}>Subtasks</Text>
+          <View style={styles.addSubtaskRow}>
+            <TextInput
+              style={[styles.miniInput, { color: text, backgroundColor: cardBg }]}
+              placeholder="Add subtask..."
+              placeholderTextColor="#9CA3AF"
+              value={subtaskInput}
+              onChangeText={setSubtaskInput}
+            />
+            <TouchableOpacity style={styles.addMiniBtn} onPress={handleAddSubtask}>
+              <Text style={styles.addMiniBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          {subtasks.map((s, idx) => (
+            <View key={idx} style={styles.subtaskItem}>
+              <Text style={{ color: text, flex: 1 }}>• {s.title}</Text>
+              <TouchableOpacity onPress={() => setSubtasks(subtasks.filter((_, i) => i !== idx))}>
+                <Text style={{ color: '#EF4444' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.label, { color: text }]}>Tags</Text>
+          <View style={styles.addSubtaskRow}>
+            <TextInput
+              style={[styles.miniInput, { color: text, backgroundColor: cardBg }]}
+              placeholder="Add tag..."
+              placeholderTextColor="#9CA3AF"
+              value={tagInput}
+              onChangeText={setTagInput}
+            />
+            <TouchableOpacity style={styles.addMiniBtn} onPress={handleAddTag}>
+              <Text style={styles.addMiniBtnText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.tagList}>
+            {tags.map((tag, idx) => (
+              <View key={idx} style={styles.tagBadge}>
+                <Text style={styles.tagText}>#{tag}</Text>
+                <TouchableOpacity onPress={() => setTags(tags.filter((_, i) => i !== idx))}>
+                  <Text style={{ color: '#3B82F6', marginLeft: 5 }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        </View>
+
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleSave}
@@ -285,6 +369,17 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+
+  // New UI components
+  section: { marginBottom: 20 },
+  addSubtaskRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  miniInput: { flex: 1, padding: 12, borderRadius: 8, fontSize: 14 },
+  addMiniBtn: { backgroundColor: '#3B82F6', width: 44, height: 44, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  addMiniBtnText: { color: '#FFF', fontSize: 24, fontWeight: '700' },
+  subtaskItem: { flexDirection: 'row', alignItems: 'center', padding: 10, marginVertical: 2 },
+  tagList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  tagBadge: { backgroundColor: '#3B82F620', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, flexDirection: 'row', alignItems: 'center' },
+  tagText: { color: '#3B82F6', fontSize: 12, fontWeight: '700' },
 
   // Modal Styles
   modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },

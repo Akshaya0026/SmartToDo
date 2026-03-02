@@ -5,6 +5,8 @@ import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { AddTaskScreen } from '../screens/AddTaskScreen';
+import { TaskDetailScreen } from '../screens/TaskDetailScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { useAuth } from '../context/AuthContext';
 import { TaskProvider } from '../context/TaskContext';
@@ -16,6 +18,8 @@ export type RootStackParamList = {
   Home: undefined;
   AddTask: undefined;
   Settings: undefined;
+  TaskDetail: { taskId: string };
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -46,6 +50,8 @@ export function MainStack({ userId }: { userId: string }) {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddTask" component={AddTaskScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </TaskProvider>
   );

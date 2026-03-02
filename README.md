@@ -1,79 +1,86 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🚀 Smart ToDo Clean
 
-# Getting Started
+A premium, feature-rich task management application built with **React Native** and **Firebase**. Smart ToDo is designed to help you organize your life with a focus on productivity, aesthetics, and seamless user experience.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+---
 
-## Step 1: Start the Metro Server
+## ✨ Key Features
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+### 📋 Task Management & Subtasks
+- **Checklists**: Break down complex tasks into subtasks with individual completion tracking.
+- **Priority Levels**: Categorize tasks as High, Medium, or Low to stay focused on what matters most.
+- **Deadline Validation**: Smart date/time selection that prevents past-date errors.
 
-To start Metro, run the following command from the _root_ of your React Native project:
+### 🎨 Premium Personalization
+- **6 Custom Themes**: Transform your experience with curated themes:
+  - ☀️ **Light**: Clean and professional.
+  - 🌙 **Dark**: Elegant and focused.
+  - 🌌 **Midnight**: Deep black for OLED efficiency.
+  - 🌿 **Aurora**: Vibrant emerald and forest green.
+  - 🌅 **Sunset**: Warm, productivity-boosting tones.
+  - 🌊 **Ocean**: Calming and refreshing blues.
+- **Real-time Preview**: See your chosen theme in action before applying.
 
-```bash
-# using npm
-npm start
+### 📈 Productivity & Motivation
+- **🔥 Streak Tracker**: Gamify your productivity by maintaining a daily completion streak.
+- **Daily Progress Bar**: Visualize your achievement level for the current day at a glance.
+- **Profile Stats**: Deep dive into your task history, success rates, and total completions.
 
-# OR using Yarn
-yarn start
-```
+### ✋ Intuitive UX
+- **Drag & Drop Reordering**: Long-press any task to manually reorganize your list exactly how you want.
+- **Swipe Gestures**: Quickly complete or delete tasks with smooth haptic feedback and animations.
+- **Advanced Filtering**: Sort and filter by status, priority, or tags.
 
-## Step 2: Start your Application
+### ☁️ Infrastructure
+- **Firebase Sync**: Real-time cloud synchronization across devices.
+- **Offline Mode**: Continue managing tasks without internet; changes sync automatically when you're back online.
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+---
 
-### For Android
+## 🛠️ Tech Stack
 
-```bash
-# using npm
-npm run android
+- **Framework**: React Native (0.74+)
+- **State Management**: React Context API
+- **Backend**: Firebase Firestore & Auth
+- **Animations**: React Native Reanimated & Gesture Handler
+- **Storage**: AsyncStorage for offline persistence
+- **Navigation**: React Navigation (Native Stack)
 
-# OR using Yarn
-yarn android
-```
+---
 
-### For iOS
+## 🚀 Getting Started
 
-```bash
-# using npm
-npm run ios
+### Prerequisites
+- Node.js (>= 18)
+- Android Studio / Xcode
+- Java Development Kit (JDK)
 
-# OR using Yarn
-yarn ios
-```
+### Installation
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Metro server:
+   ```bash
+   npm start
+   ```
+4. Run on Android:
+   ```bash
+   npm run android
+   ```
+5. Run on iOS:
+   ```bash
+   npm run ios
+   ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+---
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+## 📸 Screenshots
 
-## Step 3: Modifying your App
+*(Add your screenshots here to showcase the Aurora, Midnight, and Sunset themes!)*
 
-Now that you have successfully run the app, let's modify it.
+---
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## 📄 License
+This project is licensed under the MIT License.

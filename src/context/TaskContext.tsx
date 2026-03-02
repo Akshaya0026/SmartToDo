@@ -11,7 +11,7 @@ import { Task, TaskInput } from '../models/Task';
 import {
   fetchTasks,
   addTask as addTaskService,
-  updateTask,
+  updateTask as updateTaskService,
   deleteTask as deleteTaskService,
   syncOfflineTasksToFirestore,
   getOfflineTasks,
@@ -25,15 +25,18 @@ interface TaskContextType {
   addTask: (input: TaskInput) => Promise<void>;
   toggleComplete: (taskId: string) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
+  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   refreshTasks: () => Promise<void>;
   filter: 'all' | 'pending' | 'completed' | 'high' | 'medium' | 'low';
   setFilter: (f: TaskContextType['filter']) => void;
+  reorderTasks: (newTasks: Task[]) => void;
   filteredTasks: Task[];
   stats: {
     total: number;
     completed: number;
     pending: number;
     highPriority: number;
+    streak: number;
   };
 }
 
@@ -110,6 +113,9 @@ export function TaskProvider({
         priority: input.priority,
         completed: false,
         userId: effectiveUserId,
+        subtasks: input.subtasks || [],
+        tags: input.tags || [],
+        order: tasks.length,
       };
 
       // 2. Update UI Instantly
@@ -120,14 +126,14 @@ export function TaskProvider({
         .then((realTask) => {
           console.log('[TaskContext] Sync Success, replacing Heartbeat ID');
           setTasks((prev) =>
-            prev.map((t) => (t.id === heartbeatId ? realTask : t))
+            prev.map((t) => (t.id === heartbeatId ? { ...realTask, order: newTask.order } : t))
           );
         })
         .catch((e) => {
           console.error('[TaskContext] Background Sync Failed (Still saved locally):', e);
         });
     },
-    [userId]
+    [userId, tasks.length]
   );
 
   const toggleComplete = useCallback(async (taskId: string) => {
@@ -147,6 +153,20 @@ export function TaskProvider({
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
   }, []);
 
+  const updateTask = useCallback(async (taskId: string, updates: Partial<Task>) => {
+    await updateTaskService(taskId, updates);
+    setTasks((prev) =>
+      sortTasks(
+        prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
+      )
+    );
+  }, []);
+
+  const reorderTasks = useCallback((newTasks: Task[]) => {
+    const updated = newTasks.map((t, index) => ({ ...t, order: index }));
+    setTasks(updated);
+  }, []);
+
   const filteredTasks = React.useMemo(() => {
     let list = tasks;
     if (filter === 'pending') list = list.filter((t) => !t.completed);
@@ -157,12 +177,29 @@ export function TaskProvider({
     return list;
   }, [tasks, filter]);
 
-  const stats = React.useMemo(() => ({
-    total: tasks.length,
-    completed: tasks.filter((t) => t.completed).length,
-    pending: tasks.filter((t) => !t.completed).length,
-    highPriority: tasks.filter((t) => t.priority === 'high' && !t.completed).length,
-  }), [tasks]);
+  const stats = React.useMemo(() => {
+    // Calculate streak
+    const completedDates = new Set(
+      tasks
+        .filter(t => t.completed)
+        .map(t => new Date(t.createdAt).toDateString())
+    );
+
+    let streak = 0;
+    let curr = new Date();
+    while (completedDates.has(curr.toDateString())) {
+      streak++;
+      curr.setDate(curr.getDate() - 1);
+    }
+
+    return {
+      total: tasks.length,
+      completed: tasks.filter((t) => t.completed).length,
+      pending: tasks.filter((t) => !t.completed).length,
+      highPriority: tasks.filter((t) => t.priority === 'high' && !t.completed).length,
+      streak,
+    };
+  }, [tasks]);
 
   return (
     <TaskContext.Provider
@@ -173,6 +210,8 @@ export function TaskProvider({
         addTask,
         toggleComplete,
         deleteTask,
+        updateTask,
+        reorderTasks,
         refreshTasks: loadTasks,
         filter,
         setFilter,

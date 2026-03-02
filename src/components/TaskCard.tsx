@@ -24,6 +24,7 @@ interface TaskCardProps {
   task: Task;
   onComplete: () => void;
   onDelete: () => void;
+  navigation?: any;
 }
 
 function formatCountdown(deadline: number): string {
@@ -38,7 +39,7 @@ function formatCountdown(deadline: number): string {
   return `${mins}m left`;
 }
 
-export const TaskCard = React.memo(({ task, onComplete, onDelete }: TaskCardProps) => {
+export const TaskCard = React.memo(({ task, onComplete, onDelete, navigation }: TaskCardProps) => {
   const { isDark } = useTheme();
   const translateX = useSharedValue(0);
 
@@ -64,20 +65,34 @@ export const TaskCard = React.memo(({ task, onComplete, onDelete }: TaskCardProp
     transform: [{ translateX: translateX.value }],
   }));
 
+  const opacityComplete = useAnimatedStyle(() => ({
+    opacity: translateX.value > 20 ? Math.min(translateX.value / SWIPE_THRESHOLD, 1) : 0,
+  }));
+
+  const opacityDelete = useAnimatedStyle(() => ({
+    opacity: translateX.value < -20 ? Math.min(Math.abs(translateX.value) / SWIPE_THRESHOLD, 1) : 0,
+  }));
+
   const priorityColor = PRIORITY_COLORS[task.priority];
   const bg = isDark ? '#1F2937' : '#FFFFFF';
   const text = isDark ? '#F9FAFB' : '#111827';
   const subtext = isDark ? '#9CA3AF' : '#6B7280';
 
+  const completedSubtasks = task.subtasks?.filter((s: any) => s.completed).length || 0;
+  const totalSubtasks = task.subtasks?.length || 0;
+
   return (
     <GestureDetector gesture={panGesture}>
       <View style={styles.wrapper}>
-        <View style={[styles.swipeHint, styles.completeHint]}>
+        <Animated.View style={[styles.swipeHint, styles.completeHint, opacityComplete]}>
+          <Text style={styles.swipeIcon}>✅</Text>
           <Text style={styles.swipeText}>Complete</Text>
-        </View>
-        <View style={[styles.swipeHint, styles.deleteHint]}>
+        </Animated.View>
+        <Animated.View style={[styles.swipeHint, styles.deleteHint, opacityDelete]}>
+          <Text style={styles.swipeIcon}>🗑️</Text>
           <Text style={styles.swipeText}>Delete</Text>
-        </View>
+        </Animated.View>
+
         <Animated.View
           style={[
             styles.card,
@@ -88,19 +103,27 @@ export const TaskCard = React.memo(({ task, onComplete, onDelete }: TaskCardProp
           <View style={[styles.priorityBar, { backgroundColor: priorityColor }]} />
           <TouchableOpacity
             style={styles.content}
-            onPress={onComplete}
+            onPress={() => navigation?.navigate('TaskDetail', { taskId: task.id })}
             activeOpacity={0.7}
           >
-            <Text
-              style={[
-                styles.title,
-                { color: text },
-                task.completed && styles.completedText,
-              ]}
-              numberOfLines={1}
-            >
-              {task.title}
-            </Text>
+            <View style={styles.header}>
+              <Text
+                style={[
+                  styles.title,
+                  { color: text },
+                  task.completed && styles.completedText,
+                ]}
+                numberOfLines={1}
+              >
+                {task.title}
+              </Text>
+              <View style={[styles.badge, { backgroundColor: priorityColor + '20' }]}>
+                <Text style={[styles.badgeText, { color: priorityColor }]}>
+                  {task.priority}
+                </Text>
+              </View>
+            </View>
+
             {task.description ? (
               <Text
                 style={[styles.description, { color: subtext }]}
@@ -109,14 +132,17 @@ export const TaskCard = React.memo(({ task, onComplete, onDelete }: TaskCardProp
                 {task.description}
               </Text>
             ) : null}
+
             <View style={styles.footer}>
-              <View style={[styles.badge, { backgroundColor: priorityColor + '30' }]}>
-                <Text style={[styles.badgeText, { color: priorityColor }]}>
-                  {task.priority}
-                </Text>
-              </View>
+              {totalSubtasks > 0 && (
+                <View style={styles.subtaskInfo}>
+                  <Text style={[styles.subtaskText, { color: subtext }]}>
+                    📋 {completedSubtasks}/{totalSubtasks} subtasks
+                  </Text>
+                </View>
+              )}
               <Text style={[styles.countdown, { color: subtext }]}>
-                {formatCountdown(task.deadline)}
+                {task.completed ? 'Done' : `⏳ ${formatCountdown(task.deadline)}`}
               </Text>
             </View>
           </TouchableOpacity>
@@ -129,76 +155,107 @@ export const TaskCard = React.memo(({ task, onComplete, onDelete }: TaskCardProp
 const styles = StyleSheet.create({
   wrapper: {
     marginHorizontal: 16,
-    marginVertical: 6,
+    marginVertical: 8,
     position: 'relative',
+    borderRadius: 16,
+    backgroundColor: '#00000010', // Shadow/Depth base
+    overflow: 'hidden',
   },
   swipeHint: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: 80,
-    justifyContent: 'center',
+    width: width,
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 30,
   },
   completeHint: {
     left: 0,
     backgroundColor: '#10B981',
+    justifyContent: 'flex-start',
   },
   deleteHint: {
     right: 0,
     backgroundColor: '#EF4444',
+    justifyContent: 'flex-end',
+  },
+  swipeIcon: {
+    fontSize: 24,
+    marginRight: 8,
   },
   swipeText: {
     color: '#FFF',
-    fontWeight: '600',
-    fontSize: 12,
+    fontWeight: '700',
+    fontSize: 16,
   },
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
     flexDirection: 'row',
-    elevation: 2,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 8,
   },
   priorityBar: {
-    width: 4,
+    width: 6,
   },
   content: {
     flex: 1,
     padding: 16,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '700',
+    flex: 1,
+    marginRight: 10,
   },
   completedText: {
     textDecorationLine: 'line-through',
-    opacity: 0.7,
+    opacity: 0.5,
   },
   description: {
     fontSize: 14,
-    marginBottom: 8,
+    lineHeight: 20,
+    marginBottom: 12,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E5E7EB33',
+    paddingTop: 12,
   },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  subtaskInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  badgeText: {
+  subtaskText: {
     fontSize: 12,
     fontWeight: '600',
-    textTransform: 'capitalize',
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   countdown: {
     fontSize: 12,
+    fontWeight: '600',
   },
 });

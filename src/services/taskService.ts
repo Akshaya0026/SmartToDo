@@ -29,12 +29,15 @@ function taskFromFirestore(docData: Record<string, unknown>, id: string): Task {
   return {
     id,
     title: data.title as string,
-    description: data.description as string,
+    description: (data.description as string) || '',
     createdAt,
     deadline,
     priority: data.priority as Task['priority'],
     completed: data.completed as boolean,
     userId: data.userId as string,
+    subtasks: (data.subtasks as any[]) || [],
+    tags: (data.tags as string[]) || [],
+    order: (data.order as number) || 0,
   };
 }
 
@@ -96,6 +99,9 @@ export async function addTask(
   const localTask: Task = {
     id: `offline_${Date.now()}`,
     ...taskData,
+    order: 0,
+    subtasks: [],
+    tags: [],
   };
 
   try {
@@ -104,12 +110,18 @@ export async function addTask(
       ...taskData,
       createdAt: Timestamp.fromMillis(now),
       deadline: Timestamp.fromMillis(input.deadline),
+      subtasks: input.subtasks || [],
+      tags: input.tags || [],
+      order: 0, // Should ideally be passed in
     }), 3000);
 
     console.log('[TaskService] Firestore Add Success:', docRef.id);
     return {
       id: docRef.id,
       ...taskData,
+      subtasks: input.subtasks || [],
+      tags: input.tags || [],
+      order: 0,
     };
   } catch (error: any) {
     console.warn('[TaskService] Firestore slow or failed, saving locally:', error?.message);
@@ -121,7 +133,7 @@ export async function addTask(
 
 export async function updateTask(
   taskId: string,
-  updates: Partial<Pick<Task, 'completed' | 'title' | 'description' | 'deadline' | 'priority'>>
+  updates: Partial<Task>
 ): Promise<void> {
   if (taskId.startsWith('offline_')) {
     const raw = await AsyncStorage.getItem(OFFLINE_TASKS_KEY);

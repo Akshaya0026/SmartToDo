@@ -1,80 +1,61 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import type { ThemeMode } from '../context/ThemeContext';
-import { logger } from '../utils/DebugLogger';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import { useTheme, THEMES, ThemeType } from '../context/ThemeContext';
 
-const THEMES: { key: ThemeMode; label: string }[] = [
-  { key: 'light', label: 'Light' },
-  { key: 'dark', label: 'Dark' },
-  { key: 'system', label: 'System' },
-];
-
-export function SettingsScreen({ navigation }: { navigation: { goBack: () => void } }) {
-  const { isDark, themeMode, setThemeMode } = useTheme();
-  const [logs, setLogs] = React.useState<string[]>([]);
-
-  React.useEffect(() => {
-    setLogs(logger.getLogs());
-  }, []);
-
-  const bg = isDark ? '#111827' : '#F9FAFB';
-  const text = isDark ? '#F9FAFB' : '#111827';
-  const cardBg = isDark ? '#1F2937' : '#FFFFFF';
-  const subtext = isDark ? '#9CA3AF' : '#6B7280';
+export function SettingsScreen({ navigation }: { navigation: any }) {
+  const { theme, themeType, setThemeType } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: bg }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.back, { color: '#3B82F6' }]}>← Back</Text>
+          <Text style={[styles.backText, { color: theme.primary }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: text }]}>Settings</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Appearance</Text>
       </View>
 
-      <ScrollView>
-        <View style={[styles.card, { backgroundColor: cardBg }]}>
-          <Text style={[styles.sectionTitle, { color: text }]}>Theme</Text>
-          {THEMES.map((t) => (
-            <TouchableOpacity
-              key={t.key}
-              style={[
-                styles.option,
-                themeMode === t.key && styles.optionActive,
-              ]}
-              onPress={() => setThemeMode(t.key)}
-            >
-              <Text
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={[styles.sectionLabel, { color: theme.subtext }]}>CHOOSE THEME</Text>
+
+        <View style={styles.themeGrid}>
+          {(Object.keys(THEMES) as ThemeType[]).map((key) => {
+            const t = THEMES[key];
+            const isSelected = themeType === key;
+
+            return (
+              <TouchableOpacity
+                key={key}
                 style={[
-                  styles.optionText,
-                  { color: text },
-                  themeMode === t.key && styles.optionTextActive,
+                  styles.themeCard,
+                  { backgroundColor: t.card, borderColor: isSelected ? t.primary : t.border },
+                  isSelected && styles.themeCardActive
                 ]}
+                onPress={() => setThemeType(key)}
               >
-                {t.label}
-              </Text>
-              {themeMode === t.key && <Text style={styles.check}>✓</Text>}
-            </TouchableOpacity>
-          ))}
+                <View style={[styles.colorBubble, { backgroundColor: t.primary }]} />
+                <Text style={[styles.themeLabel, { color: t.text }]}>
+                  {key.charAt(0).toUpperCase() + key.slice(1)}
+                </Text>
+                {isSelected && <Text style={{ color: t.primary }}>✓</Text>}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        <View style={[styles.card, { backgroundColor: cardBg }]}>
-          <View style={styles.logHeader}>
-            <Text style={[styles.sectionTitle, { color: text }]}>Diagnostic Logs</Text>
-            <TouchableOpacity onPress={() => { logger.clearLogs(); setLogs([]); }}>
-              <Text style={{ color: '#EF4444', padding: 16 }}>Clear</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.logContainer}>
-            {logs.length === 0 ? (
-              <Text style={{ color: subtext, padding: 16 }}>No logs yet.</Text>
-            ) : (
-              logs.map((log, i) => (
-                <Text key={i} style={[styles.logText, { color: subtext }]}>
-                  {log}
-                </Text>
-              ))
-            )}
+        <View style={styles.previewContainer}>
+          <Text style={[styles.previewLabel, { color: theme.subtext }]}>PREVIEW</Text>
+          <View style={[styles.previewCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.previewTitle, { color: theme.text }]}>Sample Task</Text>
+            <Text style={[styles.previewSub, { color: theme.subtext }]}>This is how your tasks will look.</Text>
+            <View style={[styles.previewFab, { backgroundColor: theme.primary }]}>
+              <Text style={{ color: '#FFF', fontSize: 20 }}>+</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -83,68 +64,55 @@ export function SettingsScreen({ navigation }: { navigation: { goBack: () => voi
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
-    padding: 20,
-    paddingTop: 48,
-  },
-  back: {
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  card: {
-    margin: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    padding: 16,
-    paddingBottom: 8,
-  },
-  option: {
+    padding: 24,
+    paddingTop: 60,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 20,
+  },
+  backText: { fontSize: 16, fontWeight: '600' },
+  title: { fontSize: 24, fontWeight: '800' },
+  scroll: { padding: 24 },
+  sectionLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 16 },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  themeCard: {
+    width: '48%',
     padding: 16,
-  },
-  optionActive: {
-    backgroundColor: '#3B82F620',
-  },
-  optionText: {
-    fontSize: 16,
-  },
-  optionTextActive: {
-    color: '#3B82F6',
-    fontWeight: '600',
-  },
-  check: {
-    color: '#3B82F6',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  logHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderRadius: 16,
+    borderWidth: 2,
     alignItems: 'center',
+    gap: 8,
   },
-  logContainer: {
-    padding: 10,
-    maxHeight: 300,
+  themeCardActive: {
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
-  logText: {
-    fontSize: 10,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    marginBottom: 4,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E7EB33',
-    paddingBottom: 2,
+  colorBubble: { width: 40, height: 40, borderRadius: 20 },
+  themeLabel: { fontSize: 16, fontWeight: '600' },
+  previewContainer: { marginTop: 40 },
+  previewLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 16 },
+  previewCard: {
+    padding: 24,
+    borderRadius: 24,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  previewTitle: { fontSize: 18, fontWeight: '700', marginBottom: 4 },
+  previewSub: { fontSize: 14, marginBottom: 20 },
+  previewFab: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
   },
 });
