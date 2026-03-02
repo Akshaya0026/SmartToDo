@@ -54,6 +54,10 @@ yarn-error.log
 
 # Bundle artifact
 *.jsbundle
+*.android.bundle
+
+# Generated Android assets (run 'npx react-native bundle' to regenerate)
+android/app/src/main/assets/
 
 # Ruby / CocoaPods
 **/Pods/
